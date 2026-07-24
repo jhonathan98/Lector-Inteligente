@@ -1,0 +1,6 @@
+{
+  "name": "Lector Inteligente con Notas y Traductor",
+  "description": "Lector de pantalla y documentos web con síntesis de voz, destacado de texto, notas inteligentes y traducción al español.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
