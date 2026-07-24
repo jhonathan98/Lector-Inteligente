@@ -33,6 +33,7 @@ interface ReaderCanvasProps {
   onAddHighlight: (highlight: HighlightNote) => void;
   onDeleteHighlight: (id: string) => void;
   sideBySide: boolean;
+  selectionMode?: 'ask' | 'auto_speak' | 'auto_translate_speak';
 }
 
 const COLOR_CLASSES: Record<HighlightColor, { bg: string; border: string; label: string }> = {
@@ -73,6 +74,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
   onAddHighlight,
   onDeleteHighlight,
   sideBySide,
+  selectionMode = 'ask',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedText, setSelectedText] = useState('');
@@ -141,6 +143,52 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
     });
   }, [doc.originalText]);
 
+  // Translate Selected Snippet AND Immediately Speak in Spanish
+  const handleTranslateAndSpeak = async (overrideText?: string) => {
+    const textToUse = overrideText || selectedText;
+    if (!textToUse) return;
+
+    setIsTranslating(true);
+    setTranslationResult(null);
+
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: textToUse, targetLang: 'Spanish' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const spanishText = data.translatedText || textToUse;
+        setTranslationResult({
+          translatedText: spanishText,
+          detectedLanguage: data.detectedLanguage || 'English',
+          briefSummary: data.briefSummary || '',
+          keyVocabulary: data.keyVocabulary || [],
+        });
+
+        // Speak translated Spanish text
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(spanishText);
+          u.lang = 'es-ES';
+          u.rate = settings.readingSpeed;
+          window.speechSynthesis.speak(u);
+        }
+      }
+    } catch (e) {
+      console.error('Error translating and speaking:', e);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(textToUse);
+        u.lang = 'es-ES';
+        window.speechSynthesis.speak(u);
+      }
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   // Handle Text Selection Popup
   useEffect(() => {
     const handleSelectionChange = () => {
@@ -161,43 +209,33 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setSelectedText(text);
           setPopoverPos({
-            top: rect.top - containerRect.top - 55,
-            left: Math.max(10, Math.min(containerRect.width - 250, rect.left - containerRect.left)),
+            top: Math.max(10, rect.top - containerRect.top - 65),
+            left: Math.max(10, Math.min(containerRect.width - 290, rect.left - containerRect.left)),
           });
+
+          // Handle auto selection mode
+          if (selectionMode === 'auto_speak') {
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const u = new SpeechSynthesisUtterance(text);
+              u.lang = doc.language === 'en' ? 'en-US' : 'es-ES';
+              u.rate = settings.readingSpeed;
+              window.speechSynthesis.speak(u);
+            }
+          } else if (selectionMode === 'auto_translate_speak') {
+            handleTranslateAndSpeak(text);
+          }
         }
       }
     };
 
     window.document.addEventListener('selectionchange', handleSelectionChange);
     return () => window.document.removeEventListener('selectionchange', handleSelectionChange);
-  }, [translationResult, aiNoteData]);
+  }, [translationResult, aiNoteData, selectionMode, settings.readingSpeed]);
 
-  // Translate Selected Snippet
+  // Translate Selected Snippet (Standard)
   const handleTranslateSelection = async () => {
-    if (!selectedText) return;
-    setIsTranslating(true);
-    setTranslationResult(null);
-
-    try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: selectedText, targetLang: 'Spanish' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setTranslationResult({
-          translatedText: data.translatedText,
-          detectedLanguage: data.detectedLanguage,
-          briefSummary: data.briefSummary,
-          keyVocabulary: data.keyVocabulary || [],
-        });
-      }
-    } catch (e) {
-      console.error('Error translating selection:', e);
-    } finally {
-      setIsTranslating(false);
-    }
+    handleTranslateAndSpeak();
   };
 
   // Generate AI Note & Key Takeaways for Selected Snippet
@@ -427,34 +465,34 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
             </div>
 
             {/* Main Action Buttons */}
-            <div className="flex items-center justify-between gap-1 mb-3">
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
               <button
-                onClick={handleTranslateSelection}
+                onClick={() => handleTranslateAndSpeak()}
                 disabled={isTranslating}
-                className="flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-xs font-medium transition-colors"
-                title="Traducir fragmento al español"
+                className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-[11px] font-bold shadow-md transition-all active:scale-95"
+                title="Traducir al español y leer en voz alta de inmediato"
               >
-                <Globe className={`w-4 h-4 mb-1 ${isTranslating ? 'animate-spin' : ''}`} />
-                <span>Traducir</span>
+                <Globe className={`w-4 h-4 mb-1 text-emerald-300 ${isTranslating ? 'animate-spin' : ''}`} />
+                <span className="text-center leading-tight">Traducir y Leer</span>
+              </button>
+
+              <button
+                onClick={handleSpeakSelection}
+                className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-semibold border border-slate-700 transition-colors active:scale-95"
+                title="Escuchar en idioma original"
+              >
+                <Volume2 className="w-4 h-4 mb-1 text-amber-400" />
+                <span className="text-center leading-tight">Leer Original</span>
               </button>
 
               <button
                 onClick={handleGenerateAiNote}
                 disabled={isAiLoading}
-                className="flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-xl bg-purple-600/80 hover:bg-purple-600 text-xs font-medium transition-colors"
+                className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-semibold border border-slate-700 transition-colors active:scale-95"
                 title="Explicar y generar nota inteligente con IA"
               >
-                <Sparkles className={`w-4 h-4 mb-1 ${isAiLoading ? 'animate-spin' : ''}`} />
-                <span>Nota IA</span>
-              </button>
-
-              <button
-                onClick={handleSpeakSelection}
-                className="flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium transition-colors"
-                title="Escuchar fragmento"
-              >
-                <Volume2 className="w-4 h-4 mb-1 text-amber-400" />
-                <span>Escuchar</span>
+                <Sparkles className={`w-4 h-4 mb-1 text-purple-400 ${isAiLoading ? 'animate-spin' : ''}`} />
+                <span className="text-center leading-tight">Explicación IA</span>
               </button>
             </div>
 

@@ -12,6 +12,11 @@ import {
   Check,
   ChevronDown,
   Layers,
+  Lock,
+  RotateCw,
+  Bookmark,
+  Share2,
+  Puzzle,
 } from 'lucide-react';
 import { DocumentItem, ThemeMode } from '../types';
 
@@ -46,75 +51,95 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'dark':
-      case 'oled':
-        return <Moon className="w-4 h-4 text-indigo-400" />;
-      case 'sepia':
-        return <Coffee className="w-4 h-4 text-amber-700" />;
-      default:
-        return <Sun className="w-4 h-4 text-amber-500" />;
-    }
-  };
-
   return (
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand & Active Document Switcher */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-lg tracking-tight shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <span className="hidden sm:inline-block">LectorInteligente</span>
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-slate-900 text-white border-b border-slate-800 transition-colors shadow-md">
+      {/* Top Window Dots & Tab Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-between border-b border-slate-800/80 text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          {/* Mac-style Window Controls */}
+          <div className="flex items-center gap-1.5 mr-2">
+            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block opacity-80 hover:opacity-100" />
+            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block opacity-80 hover:opacity-100" />
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block opacity-80 hover:opacity-100" />
           </div>
 
-          <span className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block shrink-0" />
+          <span className="hidden sm:inline font-mono text-[11px] text-slate-400">
+            Navegador Web + Herramienta Lector/Traductor
+          </span>
+        </div>
+
+        {/* Extension Active Badge */}
+        <div className="flex items-center gap-2 bg-indigo-950/80 px-2.5 py-0.5 rounded-full border border-indigo-700/60 text-indigo-300 font-medium text-[11px]">
+          <Puzzle className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+          <span>Extensión Asistente: Selecciona cualquier texto para Escuchar o Traducir</span>
+        </div>
+      </div>
+
+      {/* Main Address Bar & Action Toolbar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-3">
+        {/* Navigation & Address Bar */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <button
+            onClick={() => window.location.reload()}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="Recargar página"
+          >
+            <RotateCw className="w-4 h-4" />
+          </button>
+
+          {/* Browser Address Bar Input Simulator */}
+          <div className="flex-1 max-w-xl flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 text-xs text-slate-200">
+            <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="font-mono text-slate-400 text-[11px] shrink-0">https://</span>
+            <span className="truncate font-medium text-slate-200">
+              {activeDoc.sourceUrl || `read.app/${activeDoc.title.toLowerCase().replace(/\s+/g, '-')}`}
+            </span>
+            <span className="ml-auto text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-900 text-indigo-300 shrink-0">
+              {activeDoc.language || 'en'}
+            </span>
+          </div>
 
           {/* Document Selector Dropdown */}
-          <div className="relative min-w-0">
+          <div className="relative shrink-0">
             <button
               id="doc-selector-btn"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-750 transition-all max-w-[200px] sm:max-w-xs truncate"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold hover:bg-slate-750 transition-all max-w-[180px] sm:max-w-xs truncate"
             >
+              <BookOpen className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
               <span className="truncate">{activeDoc.title}</span>
-              <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 font-mono uppercase shrink-0">
-                {activeDoc.language || 'es'}
-              </span>
-              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             </button>
 
             {dropdownOpen && (
               <div
-                className="absolute left-0 mt-1 w-80 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                className="absolute left-0 mt-1 w-80 rounded-xl bg-slate-850 shadow-2xl border border-slate-700 py-1.5 z-50 text-slate-200 animate-in fade-in slide-in-from-top-2 duration-150"
                 onClick={() => setDropdownOpen(false)}
               >
-                <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Documentos y Textos ({documents.length})
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Páginas y Textos ({documents.length})
                 </div>
-                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-750">
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-800">
                   {documents.map((doc) => (
                     <button
                       key={doc.id}
                       onClick={() => onSelectDoc(doc)}
-                      className={`w-full text-left px-3 py-2.5 flex items-start gap-2 hover:bg-indigo-50 dark:hover:bg-slate-700/60 transition-colors ${
+                      className={`w-full text-left px-3 py-2.5 flex items-start gap-2 hover:bg-slate-750 transition-colors ${
                         doc.id === activeDoc.id
-                          ? 'bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-medium'
-                          : 'text-slate-700 dark:text-slate-300'
+                          ? 'bg-indigo-950/60 text-indigo-300 font-medium'
+                          : 'text-slate-300'
                       }`}
                     >
                       <div className="mt-0.5 shrink-0">
                         {doc.id === activeDoc.id ? (
-                          <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          <Check className="w-4 h-4 text-indigo-400" />
                         ) : (
                           <div className="w-4 h-4" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm truncate font-medium">{doc.title}</div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-2 mt-0.5">
+                        <div className="text-xs truncate font-semibold">{doc.title}</div>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
                           <span>{doc.wordCount} palabras</span>
                           <span>•</span>
                           <span className="uppercase">{doc.language}</span>
@@ -123,14 +148,14 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                   ))}
                 </div>
-                <div className="p-1.5 border-t border-slate-100 dark:border-slate-700">
+                <div className="p-1.5 border-t border-slate-800">
                   <button
                     id="new-doc-dropdown-btn"
                     onClick={onOpenImporter}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors"
                   >
                     <PlusCircle className="w-4 h-4" />
-                    Cargar Nuevo Texto / Web
+                    Cargar Nueva Página / Pegar Texto
                   </button>
                 </div>
               </div>
@@ -139,31 +164,31 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Quick Import Button */}
           <button
             id="open-importer-btn"
             onClick={onOpenImporter}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition-all active:scale-95"
-            title="Añadir texto, PDF, URL o Imagen"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+            title="Añadir texto o sitio web para probar"
           >
             <PlusCircle className="w-4 h-4" />
-            <span className="hidden md:inline">Cargar Texto/Web</span>
+            <span className="hidden md:inline">Cargar Web/Texto</span>
           </button>
 
-          {/* Side-by-Side Dual Translation Toggle */}
+          {/* Dual View Toggle */}
           <button
             id="toggle-side-by-side-btn"
             onClick={onToggleSideBySide}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
               sideBySide
-                ? 'bg-indigo-100 border-indigo-300 text-indigo-700 dark:bg-indigo-900/60 dark:border-indigo-700 dark:text-indigo-300'
-                : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                ? 'bg-indigo-900/80 border-indigo-600 text-indigo-200'
+                : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'
             }`}
             title="Ver original y traducción lado a lado"
           >
-            <Layers className="w-4 h-4" />
-            <span className="hidden lg:inline">Vista Doble</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">Vista Lado a Lado</span>
           </button>
 
           {/* Quick Translate Button */}
@@ -171,20 +196,20 @@ export const Header: React.FC<HeaderProps> = ({
             id="translate-doc-btn"
             onClick={onTranslateDoc}
             disabled={isTranslating}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
               activeDoc.spanishTranslation
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300'
-                : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300'
+                : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'
             }`}
             title="Traducir documento completo al español con IA"
           >
-            <Globe className={`w-4 h-4 ${isTranslating ? 'animate-spin' : ''}`} />
+            <Globe className={`w-3.5 h-3.5 ${isTranslating ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">
               {isTranslating
                 ? 'Traduciendo...'
                 : activeDoc.spanishTranslation
-                ? 'Ver Traducción'
-                : 'Traducir al Español'}
+                ? 'Traducción Lista'
+                : 'Traducir Página'}
             </span>
           </button>
 
@@ -192,48 +217,48 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="open-notes-sidebar-btn"
             onClick={onToggleSidebar}
-            className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            title="Ver fragmentos y notas destacadas"
+            className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold hover:bg-slate-750 transition-colors"
+            title="Ver notas y textos guardados"
           >
-            <Highlighter className="w-4 h-4 text-amber-500" />
-            <span className="hidden sm:inline">Notas</span>
+            <Highlighter className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Guardados</span>
             {notesCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-xs font-bold bg-amber-500 text-white">
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-500 text-slate-900">
                 {notesCount}
               </span>
             )}
           </button>
 
           {/* Theme Selector Toggle */}
-          <div className="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center rounded-xl bg-slate-800 p-0.5 border border-slate-700">
             <button
               onClick={() => onChangeTheme('light')}
-              className={`p-1.5 rounded-md transition-colors ${
-                theme === 'light' ? 'bg-white shadow-sm text-amber-500' : 'text-slate-400'
+              className={`p-1.5 rounded-lg transition-colors ${
+                theme === 'light' ? 'bg-slate-700 text-amber-400 shadow-sm' : 'text-slate-400'
               }`}
               title="Tema Claro"
             >
-              <Sun className="w-4 h-4" />
+              <Sun className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => onChangeTheme('sepia')}
-              className={`p-1.5 rounded-md transition-colors ${
-                theme === 'sepia' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-slate-400'
+              className={`p-1.5 rounded-lg transition-colors ${
+                theme === 'sepia' ? 'bg-amber-900/60 text-amber-300 shadow-sm' : 'text-slate-400'
               }`}
-              title="Tema Sepia Rejilla Cálida"
+              title="Tema Sepia"
             >
-              <Coffee className="w-4 h-4" />
+              <Coffee className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => onChangeTheme('dark')}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-lg transition-colors ${
                 theme === 'dark' || theme === 'oled'
                   ? 'bg-slate-700 text-indigo-400 shadow-sm'
                   : 'text-slate-400'
               }`}
-              title="Tema Oscuro Noche"
+              title="Tema Oscuro"
             >
-              <Moon className="w-4 h-4" />
+              <Moon className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -241,3 +266,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

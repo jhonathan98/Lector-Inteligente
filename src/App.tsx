@@ -4,6 +4,7 @@ import { DocumentImporter } from './components/DocumentImporter';
 import { ReaderCanvas } from './components/ReaderCanvas';
 import { ReaderControls } from './components/ReaderControls';
 import { HighlightsSidebar } from './components/HighlightsSidebar';
+import { FloatingExtensionWidget } from './components/FloatingExtensionWidget';
 import {
   DocumentItem,
   HighlightNote,
@@ -21,7 +22,7 @@ import {
   setActiveDocId,
 } from './lib/storage';
 import { TTSPlayer, getAvailableVoices, TTSVoiceOption } from './lib/tts';
-import { Sparkles, Globe, Volume2, Highlighter, BookOpen, Layers } from 'lucide-react';
+import { Sparkles, Globe, Volume2, Highlighter, BookOpen, Layers, Puzzle } from 'lucide-react';
 
 export default function App() {
   // Application State
@@ -30,6 +31,7 @@ export default function App() {
   const [highlights, setHighlights] = useState<HighlightNote[]>([]);
   const [settings, setSettings] = useState<ReaderSettings>(loadSettings());
   const [sideBySide, setSideBySide] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'ask' | 'auto_speak' | 'auto_translate_speak'>('ask');
 
   // UI Drawer / Modal States
   const [importerOpen, setImporterOpen] = useState(false);
@@ -221,18 +223,20 @@ export default function App() {
       {/* Main Reader Canvas */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-36">
         {/* Onboarding Guide Banner */}
-        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white shadow-lg flex flex-wrap items-center justify-between gap-4">
+        <div className="mb-6 p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 text-amber-300" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
+              <Puzzle className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold tracking-tight">
-                Lector de Pantalla, Documentos y Web con Traductor e IA
+              <h3 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+                <span>Herramienta Asistente de Lectura y Traducción en Vivo</span>
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Instalada y Activa
+                </span>
               </h3>
-              <p className="text-xs text-indigo-100 mt-0.5">
-                • <strong>Selecciona texto</strong> para destacar, traducir al español o guardar notas con IA. <br className="hidden sm:inline" />
-                • Haz clic en cualquier oración para escuchar desde ese punto con voz sincronizada.
+              <p className="text-xs text-slate-300 mt-0.5">
+                👉 <strong>Selecciona cualquier texto</strong> en la página para <strong>escucharlo</strong> o <strong>traducirlo al español en voz alta</strong> al instante.
               </p>
             </div>
           </div>
@@ -240,9 +244,10 @@ export default function App() {
           <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
             <button
               onClick={() => setImporterOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-white text-indigo-950 hover:bg-indigo-50 transition-all shadow-sm"
+              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-md flex items-center gap-1.5 font-bold"
             >
-              Cargar URL / Texto
+              <Globe className="w-3.5 h-3.5" />
+              Pegar Nuevo Texto / URL
             </button>
           </div>
         </div>
@@ -258,8 +263,23 @@ export default function App() {
           onAddHighlight={handleAddHighlight}
           onDeleteHighlight={handleDeleteHighlight}
           sideBySide={sideBySide}
+          selectionMode={selectionMode}
         />
       </main>
+
+      {/* Floating Extension Widget Tool */}
+      <FloatingExtensionWidget
+        settings={settings}
+        onUpdateSettings={handleUpdateSettings}
+        voices={voices}
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        onPlay={() => ttsPlayerRef.current.play()}
+        onPause={() => ttsPlayerRef.current.pause()}
+        onStop={() => ttsPlayerRef.current.stop()}
+        selectionMode={selectionMode}
+        onChangeSelectionMode={setSelectionMode}
+      />
 
       {/* Audio Controls Bar */}
       <ReaderControls
