@@ -249,7 +249,7 @@ export default function App() {
 
         {/* Reader Document Surface */}
         <ReaderCanvas
-          document={activeDoc}
+          doc={activeDoc}
           settings={settings}
           activeSentenceIndex={activeSentenceIndex}
           isPlaying={isPlaying}

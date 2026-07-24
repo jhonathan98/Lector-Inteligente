@@ -30,6 +30,21 @@ function getGemini(): GoogleGenAI {
   return aiClient;
 }
 
+function isQuotaError(error: any): boolean {
+  if (!error) return false;
+  const msg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
+  return (
+    msg.includes('429') ||
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('prepayment credits') ||
+    msg.includes('depleted') ||
+    msg.includes('quota') ||
+    error.status === 429 ||
+    error.status === 'RESOURCE_EXHAUSTED' ||
+    error.code === 429
+  );
+}
+
 // 1. API: Translate text to Spanish (or target language)
 app.post('/api/translate', async (req, res) => {
   try {
@@ -90,8 +105,21 @@ Texto a traducir:
       keyVocabulary: parsed.keyVocabulary || [],
     });
   } catch (error: any) {
-    console.error('Error en /api/translate:', error);
+    if (isQuotaError(error)) {
+      console.warn('Gemini API quota exceeded in /api/translate. Serving fallback response.');
+      const originalText = req.body?.text || '';
+      return res.json({
+        success: true,
+        translatedText: originalText,
+        detectedLanguage: 'Original',
+        briefSummary: 'Aviso: Cuota de IA agotada temporalmente.',
+        keyVocabulary: [],
+        warning: 'Límite de cuota de IA alcanzado. Se muestra el texto original.',
+      });
+    }
+    console.error('Error en /api/translate:', error?.message || error);
     return res.status(500).json({
+      success: false,
       error: error.message || 'Error al traducir el texto.',
     });
   }
@@ -154,8 +182,16 @@ Responde en JSON con la estructura:
       isEnglish: !!parsed.isEnglish,
     });
   } catch (error: any) {
-    console.error('Error en /api/ocr:', error);
+    if (isQuotaError(error)) {
+      console.warn('Gemini API quota exceeded in /api/ocr.');
+      return res.status(429).json({
+        success: false,
+        error: 'La cuota de la API de IA se ha agotado temporalmente. Por favor, ingresa o pega el texto manualmente.',
+      });
+    }
+    console.error('Error en /api/ocr:', error?.message || error);
     return res.status(500).json({
+      success: false,
       error: error.message || 'Error al procesar la imagen u OCR.',
     });
   }
@@ -286,8 +322,22 @@ Responde en formato JSON con este esquema:
       ...parsed,
     });
   } catch (error: any) {
-    console.error('Error en /api/ai-notes:', error);
+    if (isQuotaError(error)) {
+      console.warn('Gemini API quota exceeded in /api/ai-notes. Serving fallback response.');
+      const highlight = req.body?.highlightText || '';
+      return res.json({
+        success: true,
+        explanation: `Nota local: "${highlight}". (Nota: Límite de cuota de IA alcanzado temporalmente).`,
+        keyTakeaways: [highlight.slice(0, 120)],
+        simplifiedExplanation: highlight,
+        suggestedTags: ['Texto Destacado', 'Nota Local'],
+        spanishTranslation: highlight,
+        quotaExhausted: true,
+      });
+    }
+    console.error('Error en /api/ai-notes:', error?.message || error);
     return res.status(500).json({
+      success: false,
       error: error.message || 'Error al generar la nota con IA.',
     });
   }

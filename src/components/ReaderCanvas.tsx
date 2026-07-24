@@ -24,7 +24,7 @@ import {
 } from '../types';
 
 interface ReaderCanvasProps {
-  document: DocumentItem;
+  doc: DocumentItem;
   settings: ReaderSettings;
   activeSentenceIndex: number;
   isPlaying: boolean;
@@ -64,7 +64,7 @@ const COLOR_CLASSES: Record<HighlightColor, { bg: string; border: string; label:
 };
 
 export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
-  document,
+  doc,
   settings,
   activeSentenceIndex,
   isPlaying,
@@ -102,7 +102,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
 
   // Split document text into paragraphs and sentences
   const paragraphs = React.useMemo(() => {
-    const rawParagraphs = document.originalText.split(/\n+/).filter((p) => p.trim().length > 0);
+    const rawParagraphs = doc.originalText.split(/\n+/).filter((p) => p.trim().length > 0);
     let globalSentenceCounter = 0;
 
     return rawParagraphs.map((pText) => {
@@ -139,7 +139,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
 
       return sentenceMatches;
     });
-  }, [document.originalText]);
+  }, [doc.originalText]);
 
   // Handle Text Selection Popup
   useEffect(() => {
@@ -168,8 +168,8 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
       }
     };
 
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+    window.document.addEventListener('selectionchange', handleSelectionChange);
+    return () => window.document.removeEventListener('selectionchange', handleSelectionChange);
   }, [translationResult, aiNoteData]);
 
   // Translate Selected Snippet
@@ -211,7 +211,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           highlightText: selectedText,
-          contextText: document.originalText,
+          contextText: doc.originalText,
         }),
       });
       const data = await res.json();
@@ -237,7 +237,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(selectedText);
-      u.lang = document.language === 'en' ? 'en-US' : 'es-ES';
+      u.lang = doc.language === 'en' ? 'en-US' : 'es-ES';
       window.speechSynthesis.speak(u);
     }
   };
@@ -248,7 +248,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
 
     const newHighlight: HighlightNote = {
       id: `hl-${Date.now()}`,
-      documentId: document.id,
+      documentId: doc.id,
       text: selectedText,
       color,
       noteText: customNote || undefined,
@@ -303,22 +303,22 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
         <div className="mb-8 pb-6 border-b border-slate-200/60 dark:border-slate-800">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <span className="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
-              {document.sourceType === 'url' ? 'Página Web' : document.sourceType === 'ocr' ? 'OCR Imagen' : 'Documento'}
+              {doc.sourceType === 'url' ? 'Página Web' : doc.sourceType === 'ocr' ? 'OCR Imagen' : 'Documento'}
             </span>
             <div className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-3">
-              <span>{document.wordCount} palabras</span>
+              <span>{doc.wordCount} palabras</span>
               <span>•</span>
-              <span>~{document.readingTimeMinutes} min de lectura</span>
+              <span>~{doc.readingTimeMinutes} min de lectura</span>
             </div>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
-            {document.title}
+            {doc.title}
           </h1>
 
-          {document.sourceUrl && (
+          {doc.sourceUrl && (
             <a
-              href={document.sourceUrl}
+              href={doc.sourceUrl}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-indigo-500 hover:underline inline-flex items-center gap-1 mt-2"
@@ -335,7 +335,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
             {sideBySide && (
               <div className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pb-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
                 <BookOpen className="w-4 h-4 text-indigo-500" />
-                Texto Original ({document.language.toUpperCase()})
+                Texto Original ({doc.language.toUpperCase()})
               </div>
             )}
 
@@ -343,7 +343,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
               <p key={`p-${pIdx}`} className={`${getFontClass()} space-x-1`}>
                 {sentenceList.map((sentence) => {
                   const isActive = isPlaying && sentence.globalIdx === activeSentenceIndex;
-                  const matchingHighlight = highlights.find((h) => h.documentId === document.id && h.text.includes(sentence.text.trim()));
+                  const matchingHighlight = highlights.find((h) => h.documentId === doc.id && h.text.includes(sentence.text.trim()));
 
                   let sentenceStyle = 'cursor-pointer transition-colors rounded px-0.5 py-0.5 inline ';
                   if (isActive) {
@@ -377,9 +377,9 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
                 Traducción al Español (IA)
               </div>
 
-              {document.spanishTranslation ? (
+              {doc.spanishTranslation ? (
                 <div className={`${getFontClass()} whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300`}>
-                  {document.spanishTranslation}
+                  {doc.spanishTranslation}
                 </div>
               ) : (
                 <div className="p-6 rounded-2xl bg-indigo-50/50 dark:bg-slate-850 border border-indigo-100 dark:border-slate-800 text-center space-y-3">
@@ -389,7 +389,7 @@ export const ReaderCanvas: React.FC<ReaderCanvasProps> = ({
                   </p>
                   <button
                     onClick={() => {
-                      const btn = document.getElementById('translate-doc-btn');
+                      const btn = window.document.getElementById('translate-doc-btn');
                       btn?.click();
                     }}
                     className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all"
